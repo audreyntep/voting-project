@@ -12,16 +12,16 @@
 
 - setUpSmartContractTallyVotes : retourne le contrat déployé, le owner et l'id de la proposition gagnante. 3 voters sont ajoutés au mapping des votants, 2 propositions ont été enregistrées, les 3 votants ont voté et la session de vote est fermée.
 
-**Contract** :
+**1. Contract** :
 
-1. Le owner du contrat est le deployer.
+1. Le owner du contrat est le deployer
 
-2. Le contrat commence avec l'état "RegisteringVoters". //
+2. Le contrat commence avec 0 gagnants
 
-3. Le contrat commence avec 0 gagnants.
+3. Le contrat commence avec un tableau de propositions vide
 
 
-**Voters** :
+**2. Voters** :
 
 1. addVoter ne peut être appelé que par le owner
 
@@ -33,10 +33,8 @@
 
 5. addVoter émet l'événement VoterRegistered après l'ajout d'un votant
 
-6. Le contrat commence avec un tableau de propositions vide
 
-
-**Proposals** :
+**3. Proposals** :
 
 1. addProposal ne peut être appelé que pendant l'état ProposalsRegistrationStarted
 
@@ -49,7 +47,7 @@
 5. addProposal émet l'événement ProposalRegistered après l'ajout d'une proposition
 
 
-**Votes**:
+**4. Votes**:
 
 1. setVote ne peut être appelé que pendant l'état VotingSessionStarted
 
@@ -59,16 +57,14 @@
 
 4. setVote ne permet pas de voter pour une proposition qui n'existe pas
 
-5. setVote enregistre l'id de la proposition pour laquelle un votant a voté
+5. setVote enregistre le vote du votant (proposalId et hasVoted)
 
-6. setVote enregistre que le votant a voté
+6. setVote incrémente le nombre de votes pour la proposition choisie
 
-7. setVote incrémente le nombre de votes pour la proposition choisie
-
-8. setVote émet l'événement Voted après qu'un votant ait voté
+7. setVote émet l'événement Voted après qu'un votant ait voté
 
 
-**Winning**:
+**5. Winning**:
 
 1. tallyVotes ne peut être appelé que par le owner
 
@@ -81,7 +77,7 @@
 5. tallyVotes émet l'événement WorkflowStatusChange après le décompte des votes
 
 
-**Workflows**:
+**6. Workflows**:
 
 1. startProposalsRegistering change le statut du workflow à ProposalsRegistrationStarted
 

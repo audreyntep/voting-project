@@ -40,14 +40,15 @@ async function setUpSmartContractTallyVotes() {
 }
 
 describe("Voting main functions", function () {
-    describe("Tests inital state", function () {
+    describe("1. Tests inital state", function () {
         // Variables pour le contrat Voting et le owner
         let voting : any;
         let owner : any;
         let voter : any;
+        let workflowStatus : any;
         // Avant chaque test, déployer une nouvelle instance du contrat Voting
         beforeEach(async () => {
-            ({ voting, owner, voter} = await setUpSmartContract());
+            ({ voting, owner, voter } = await setUpSmartContract());
         });
         // 1.Le owner du contrat est le deployer
         it("Contract owner should be deployer", async function () {
@@ -57,13 +58,21 @@ describe("Voting main functions", function () {
         it("Contract should start with 0 winners", async function () {
             expect(await voting.winningProposalID()).to.equal(0);
         });
+        // 3. Le contrat commence avec un tableau de propositions vide
+        it("Contract should start with empty proposals array", async function () {
+            const proposalsArraySlot = 2n; // Slot du tableau proposalsArray
+            const arrayLengthHex = await ethers.provider.getStorage(voting.target, proposalsArraySlot);
+            const arrayLength = BigInt(arrayLengthHex);
+            expect(arrayLength).to.equal(0n);
+        });
     });
-    describe("Tests addVoter", function () {
+    describe("2. Tests addVoter", function () {
         let voting : any;
         let owner : any;
         let voter : any;
+        let workflowStatus : any;
         beforeEach(async () => {
-            ({ voting, owner, voter} = await setUpSmartContract());
+            ({ voting, owner, voter } = await setUpSmartContract());
         });
         // 1. addVoter ne peut être appelé que par le owner
         it("addVoter should only be called by the owner", async function () {
@@ -72,8 +81,10 @@ describe("Voting main functions", function () {
             // .to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount");
         });
         // 2. addVoter ne peut être appelé que pendant l'état "RegisteringVoters"
-        it("addVoter should not revert with workflow status 0 ", async function () {
-            expect(await voting.workflowStatus()).to.equal(0);
+        it("addVoter should not revert with workflow status RegisteringVoters", async function () {
+            const error = "Voters registration is not open yet";
+            await expect(voting.addVoter(voter.address))
+            .not.to.be.revertedWith(error);
         });
         // 3. addVoter ne permet pas d'ajouter deux fois le même votant
         it("addVoter should not allow adding the same voter twice", async function () {
@@ -92,18 +103,9 @@ describe("Voting main functions", function () {
             await expect(voting.addVoter(voter.address))
             .to.emit(voting, "VoterRegistered").withArgs(voter.address);
         });
-
-        // Contract initial state
-        // 6. Le contrat commence avec un tableau de propositions vide
-        it("Contract should start with empty proposals array", async function () {
-            await voting.addVoter(voter.address);
-            await expect(voting.connect(voter).getOneProposal(0))
-            .to.be.revertedWithPanic(0x32);
-        });
-
     });
 
-    describe("Tests addProposal", function () {
+    describe("3. Tests addProposal", function () {
         // Variables pour le contrat Voting et le owner
         let voting : any;
         let owner : any;
@@ -117,8 +119,9 @@ describe("Voting main functions", function () {
             } = await setUpSmartContractAddProposals());
         });
         // 1. addProposal ne peut être appelé que pendant l'état ProposalsRegistrationStarted
-        it("addProposalshould not revert with workflow status 1", async function () {
-            expect(await voting.workflowStatus()).to.equal(1);
+        it("addProposal should not revert with workflow status ProposalsRegistrationStarted", async function () {
+            await expect(voting.addProposal(newProposalDescription))
+            .not.to.be.revertedWith("Proposals are not allowed yet");
         });
         // 2. addProposal ne peut être appelé que par un votant enregistré
         it("addProposal should only be called by a registered voter", async function () {
@@ -144,7 +147,7 @@ describe("Voting main functions", function () {
             .to.emit(voting, "ProposalRegistered").withArgs(newProposalId);
         });
     });
-    describe("Tests setVote", function () {
+    describe("4. Tests setVote", function () {
         let voting : any;
         let owner : any;
         let voter : any;
@@ -160,8 +163,10 @@ describe("Voting main functions", function () {
             await voting.startVotingSession();
         });
         // 1. setVote ne peut être appelé que pendant l'état VotingSessionStarted
-        it("setVote should not revert with workflow status 3", async function () {
-            expect(await voting.workflowStatus()).to.equal(3);
+        it("setVote should not revert with workflow status VotingSessionStarted", async function () {
+            const error = "Voting session havent started yet";
+            await expect(voting.setVote(proposalId))
+            .not.to.be.revertedWith(error);
         });
         // 2. setVote ne peut être appelé que par un votant enregistré
         it("setVote should only be called by a registered voter", async function () {
@@ -181,32 +186,27 @@ describe("Voting main functions", function () {
             await expect(voting.connect(voter).setVote(nonExistingProposalId))
             .to.be.revertedWith("Proposal not found");
         });
-        // 5. setVote enregistre l'id de la proposition pour laquelle un votant a voté
-        it("setVote should register proposalId for a voter's vote", async function () {
+        // 5. setVote enregistre le vote du votant (proposalId et hasVoted)
+        it("setVote should register voter's vote (proposalId and hasVoted)", async function () {
             await voting.connect(voter).setVote(proposalId);
             const voterVoter = await voting.getVoter(voter.address);
             expect(voterVoter.votedProposalId).to.equal(proposalId);
-        });
-        // 6. setVote enregistre que le votant a voté
-        it("setVote should register that the voter has voted", async function () {
-            await voting.connect(voter).setVote(proposalId);
-            const voterVoter = await voting.getVoter(voter.address);
             expect(voterVoter.hasVoted).to.be.true;
         });
-        // 7. setVote incrémente le nombre de votes pour la proposition choisie
+        // 6. setVote incrémente le nombre de votes pour la proposition choisie
         it("setVote should increment vote count for the chosen proposal", async function () {
             await voting.connect(voter).setVote(proposalId);
             const proposal = await voting.getOneProposal(proposalId);
             expect(proposal.voteCount).to.equal(1);
         });
-        // 8. setVote émet l'événement Voted après qu'un votant ait voté
+        // 7. setVote émet l'événement Voted après qu'un votant ait voté
         it("setVote should emit the Voted event", async function () {
             await expect(voting.connect(voter).setVote(proposalId))
             .to.emit(voting, "Voted").withArgs(voter.address, proposalId);
         });
 
     });
-    describe("Tests tallyVotes", function () {
+    describe("5. Tests tallyVotes", function () {
         let voting : any;
         let owner : any;
         let winningProposalId : number;
@@ -222,8 +222,10 @@ describe("Voting main functions", function () {
             // .to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount");
         });
         // 2. tallyVotes ne peut être appelé que pendant l'état VotingSessionEnded
-        it("tallyVotes should not revert with workflow status 5", async function () {
-            expect(await voting.workflowStatus()).to.equal(4);
+        it("tallyVotes should not revert with workflow status VotingSessionEnded", async function () {
+            const error = "Current status is not voting session ended";
+            await expect(voting.tallyVotes())
+            .not.to.be.revertedWith(error);
         });
         // 3. tallyVotes détermine correctement la proposition gagnante
         it("tallyVotes should correctly determine the winning proposal", async function () {
@@ -241,7 +243,7 @@ describe("Voting main functions", function () {
             .to.emit(voting, "WorkflowStatusChange").withArgs(4, 5);
         });
     });
-    describe("Tests workflow status state", function () {
+    describe("6. Tests workflow status state", function () {
         let voting : any;
         let owner : any;
         let voter : any;
