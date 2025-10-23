@@ -66,7 +66,7 @@
 
 **5. Winning**:
 
-1. tallyVotes ne peut être appelé que par le owner
+1. tallyVotes ne peut être appelé que par le owner //TODO : revert openZeppelin custom error
 
 2. tallyVotes ne peut être appelé que pendant l'état VotingSessionEnded
 
