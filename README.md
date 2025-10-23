@@ -16,7 +16,7 @@
 
 1. Le owner du contrat est le deployer.
 
-2. Le contrat commence avec l'état "RegisteringVoters". //
+2. Le contrat commence avec l'état "RegisteringVoters". //TODO : revert openZeppelin custom error
 
 3. Le contrat commence avec 0 gagnants.
 
@@ -70,7 +70,7 @@
 
 **Winning**:
 
-1. tallyVotes ne peut être appelé que par le owner
+1. tallyVotes ne peut être appelé que par le owner //TODO : revert openZeppelin custom error
 
 2. tallyVotes ne peut être appelé que pendant l'état VotingSessionEnded
 
