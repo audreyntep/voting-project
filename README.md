@@ -1,78 +1,94 @@
-# voting-smart-contract
-Un smart contract de vote.
+# PROJECT 2 : Test sur Voting
 
 
-## Le processus de vote : 
 
-➡️ L'administrateur du vote enregistre une liste blanche d'électeurs identifiés par leur adresse Ethereum.
+## Test Mocha :
 
-➡️ L'administrateur du vote commence la session d'enregistrement des propositions.
+**Fonctions de setup** :
 
-➡️ Les électeurs inscrits sont autorisés à enregistrer leurs propositions pendant que la session d'enregistrement est active.
+- setUpSmartContract : retourne le contrat déployé, le owner et une adresse de voter
 
-➡️ L'administrateur de vote met fin à la session d'enregistrement des propositions.
+- setUpSmartContractAddProposals : retourne le contrat déployé, le owner et une adresse de voter. Le voter est ajouté au mapping des votants et la session de propositions est ouverte.
 
-➡️ L'administrateur du vote commence la session de vote.
+- setUpSmartContractTallyVotes : retourne le contrat déployé, le owner et l'id de la proposition gagnante. 3 voters sont ajoutés au mapping des votants, 2 propositions ont été enregistrées, les 3 votants ont voté et la session de vote est fermée.
 
-➡️ Les électeurs inscrits votent pour leur proposition préférée.
+**Contract** :
 
-➡️ L'administrateur du vote met fin à la session de vote.
+1. Le owner du contrat est le deployer.
 
-➡️ L'administrateur du vote comptabilise les votes.
+2. Le contrat commence avec l'état "RegisteringVoters". //
 
-➡️ Tout le monde peut vérifier les derniers détails de la proposition gagnante.
-
-
-## Les contraintes :
-
-✔️ Le smart contract s’appelle “Voting”.
-
-✔️ Le smart contract utilise la dernière version du compilateur (0.8.30).
-
-✔️ Le smart contract importe la librairie “Ownable” d’OpenZepplin.
-
-✔️ L’adresse qui déploie le smart contrat devient administrateur. 
-
-✔️ Le vote n'est pas secret pour les adresses de la whitelist d'électeurs.
-
-✔️ Chaque électeur peut voir les votes des autres en utilisant leurs adresses.
-
-✔️ La première proposition de la liste qui obtient le plus de voix l'emporte (les ex aequo ne sont pas gérés).
-
-## Les ajouts :
-
-Pour optimiser les frais de gas en évitant les transactions inutiles et garantir le bon déroulement du processus de vote.
-
-✅ L'administrateur est enregistré comme le premier élécteur dès le déploiement du contrat.
-
-✅ Le déploiement du contrat ne peut pas être réalisé par une adresse zéro.
-
-✅ Une addresse ne peut pas être enregistrée deux fois.
-
-✅ Chaque changement de status du workflow est sousmis à une vérification de condition du status en cours avec le modifier atStatus.
-
-✅ L'ouverture d'une session de proposition n'est possible que si il y a au moins 2 élécteurs enregistrés.
-
-✅ Un électeur enregistré peut proposer plusieurs propositions dans une même transaction.
-
-✅ Les propositions sans description ne sont pas enregistrées.
-
-✅ La fin d'une session de proposition n'est possible que s'il y a au moins 2 propositions enregistrées.
-
-✅ Les électeurs ne peuvent voter qu'une seule fois.
-
-✅ Le vote pour un identifiant de proposition invalide est rejeté.
-
-✅ La fin d'une session de vote n'est possible que si il y a au moins 1 vote.
-
-✅ La fonction permettant de récupérer l'identifiant de la proposition gagnante n'est possible qu'en fonction du status du workflow.
+3. Le contrat commence avec 0 gagnants.
 
 
-# TODO:
+**Voters** :
 
-- Vérifier qu'une adresse existe avant de l'enregistrer.
-- Limiter le nombre d'adresses dans la whiteliste pour éviter les tableaux trop grand.
-- Gérer les propositions en doublon.
-- Vérifier la taille et le type des descriptions des propositions.
-- Limiter le nombre de propositions pour éviter les tableaux trop grand.
-- Gérer les ex aequo.
+1. addVoter ne peut être appelé que par le owner
+
+2. addVoter ne peut être appelé que pendant l'état "RegisteringVoters"
+
+3. addVoter ne permet pas d'ajouter deux fois le même votant
+
+4. addVoter ajoute un votant au mapping des votants
+
+5. addVoter émet l'événement VoterRegistered après l'ajout d'un votant
+
+6. Le contrat commence avec un tableau de propositions vide
+
+
+**Proposals** :
+
+1. addProposal ne peut être appelé que pendant l'état ProposalsRegistrationStarted
+
+2. addProposal ne peut être appelé que par un votant enregistré
+
+3. addProposal n'accepte pas les descriptions de propositions vides
+
+4. addProposal ajoute une proposition 1 au tableau des propositions (vérification de sa déscription)
+
+5. addProposal émet l'événement ProposalRegistered après l'ajout d'une proposition
+
+
+**Votes**:
+
+1. setVote ne peut être appelé que pendant l'état VotingSessionStarted
+
+2. setVote ne peut être appelé que par un votant enregistré
+
+3. setVote ne permet pas à un votant de voter deux fois
+
+4. setVote ne permet pas de voter pour une proposition qui n'existe pas
+
+5. setVote enregistre l'id de la proposition pour laquelle un votant a voté
+
+6. setVote enregistre que le votant a voté
+
+7. setVote incrémente le nombre de votes pour la proposition choisie
+
+8. setVote émet l'événement Voted après qu'un votant ait voté
+
+
+**Winning**:
+
+1. tallyVotes ne peut être appelé que par le owner
+
+2. tallyVotes ne peut être appelé que pendant l'état VotingSessionEnded
+
+3. tallyVotes détermine correctement la proposition gagnante
+
+4. tallyVotes met à jour le statut du workflow à VotesTallied
+
+5. tallyVotes émet l'événement WorkflowStatusChange après le décompte des votes
+
+
+**Workflows**:
+
+1. startProposalsRegistering change le statut du workflow à ProposalsRegistrationStarted
+
+2. startProposalsRegistering initialise la proposition GENESIS
+
+3. endProposalsRegistering change le statut du workflow à ProposalsRegistrationEnded
+
+4. startVotingSession change le statut du workflow à VotingSessionStarted
+
+5. endVotingSession change le statut du workflow à VotingSessionEnded
