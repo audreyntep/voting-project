@@ -1,57 +1,78 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# voting-smart-contract
+Un smart contract de vote.
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+## Le processus de vote : 
 
-## Project Overview
+➡️ L'administrateur du vote enregistre une liste blanche d'électeurs identifiés par leur adresse Ethereum.
 
-This example project includes:
+➡️ L'administrateur du vote commence la session d'enregistrement des propositions.
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+➡️ Les électeurs inscrits sont autorisés à enregistrer leurs propositions pendant que la session d'enregistrement est active.
 
-## Usage
+➡️ L'administrateur de vote met fin à la session d'enregistrement des propositions.
 
-### Running Tests
+➡️ L'administrateur du vote commence la session de vote.
 
-To run all the tests in the project, execute the following command:
+➡️ Les électeurs inscrits votent pour leur proposition préférée.
 
-```shell
-npx hardhat test
-```
+➡️ L'administrateur du vote met fin à la session de vote.
 
-You can also selectively run the Solidity or `mocha` tests:
+➡️ L'administrateur du vote comptabilise les votes.
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
-```
+➡️ Tout le monde peut vérifier les derniers détails de la proposition gagnante.
 
-### Make a deployment to Sepolia
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+## Les contraintes :
 
-To run the deployment to a local chain:
+✔️ Le smart contract s’appelle “Voting”.
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
-```
+✔️ Le smart contract utilise la dernière version du compilateur (0.8.30).
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+✔️ Le smart contract importe la librairie “Ownable” d’OpenZepplin.
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+✔️ L’adresse qui déploie le smart contrat devient administrateur. 
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+✔️ Le vote n'est pas secret pour les adresses de la whitelist d'électeurs.
 
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
+✔️ Chaque électeur peut voir les votes des autres en utilisant leurs adresses.
 
-After setting the variable, you can run the deployment with the Sepolia network:
+✔️ La première proposition de la liste qui obtient le plus de voix l'emporte (les ex aequo ne sont pas gérés).
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+## Les ajouts :
+
+Pour optimiser les frais de gas en évitant les transactions inutiles et garantir le bon déroulement du processus de vote.
+
+✅ L'administrateur est enregistré comme le premier élécteur dès le déploiement du contrat.
+
+✅ Le déploiement du contrat ne peut pas être réalisé par une adresse zéro.
+
+✅ Une addresse ne peut pas être enregistrée deux fois.
+
+✅ Chaque changement de status du workflow est sousmis à une vérification de condition du status en cours avec le modifier atStatus.
+
+✅ L'ouverture d'une session de proposition n'est possible que si il y a au moins 2 élécteurs enregistrés.
+
+✅ Un électeur enregistré peut proposer plusieurs propositions dans une même transaction.
+
+✅ Les propositions sans description ne sont pas enregistrées.
+
+✅ La fin d'une session de proposition n'est possible que s'il y a au moins 2 propositions enregistrées.
+
+✅ Les électeurs ne peuvent voter qu'une seule fois.
+
+✅ Le vote pour un identifiant de proposition invalide est rejeté.
+
+✅ La fin d'une session de vote n'est possible que si il y a au moins 1 vote.
+
+✅ La fonction permettant de récupérer l'identifiant de la proposition gagnante n'est possible qu'en fonction du status du workflow.
+
+
+# TODO:
+
+- Vérifier qu'une adresse existe avant de l'enregistrer.
+- Limiter le nombre d'adresses dans la whiteliste pour éviter les tableaux trop grand.
+- Gérer les propositions en doublon.
+- Vérifier la taille et le type des descriptions des propositions.
+- Limiter le nombre de propositions pour éviter les tableaux trop grand.
+- Gérer les ex aequo.
