@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0",
-    "hardhat": "^3.0.8"
+    "hardhat": "^3.0.8",
+    "solc": "^0.8.30"
   },
   "type": "module",
   "devDependencies": {
